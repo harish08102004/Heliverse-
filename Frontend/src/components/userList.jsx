@@ -1,40 +1,32 @@
 import { useState, useEffect } from "react";
-import {
-  Grid,
-  CircularProgress,
-  Typography,
-  TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  
-} from "@mui/material";
-// import { FilterList } from "@mui/icons-material";
+import { Grid, CircularProgress, Typography, Box } from "@mui/material";
 import userData from "../users.json";
 import UserCard from "./userCards";
+import CreateTeam from "./createTeam";
+import ManageTeams from "./manageTeams";
+import SearchAndFilter from "./tools";
 
 const UserList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     domain: "",
     gender: "",
     availability: "",
   });
+  const [teams, setTeams] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const usersPerPage = 20;
-  const maxPageButtons = 5; // Maximum number of pagination buttons to display
+  const maxPageButtons = 5;
 
   useEffect(() => {
     const fetchUserData = () => {
       try {
-        setTimeout(() => {
-          setUsers(userData);
-          setLoading(false);
-        }, 1000);
+        setUsers(userData);
+        setLoading(false);
       } catch (error) {
         setError(error.message);
         setLoading(false);
@@ -44,17 +36,21 @@ const UserList = () => {
     fetchUserData();
   }, []);
 
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    setCurrentPage(1); // Reset page to 1 when searching
+  const handleCreateTeam = (newTeam) => {
+    setTeams((prevTeams) => [...prevTeams, newTeam]);
   };
 
-  const handleFilterChange = (event, filterType) => {
-    const { value } = event.target;
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleFilterChange = (filterType, value) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       [filterType]: value,
     }));
+    setCurrentPage(1); // Reset to first page when changing filters
   };
 
   const applyFilters = (user) => {
@@ -72,42 +68,15 @@ const UserList = () => {
     )
     .filter(applyFilters);
 
-  // Calculate total pages
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-
-  // Calculate index of the last user on the current page
-  const lastIndex = currentPage * usersPerPage;
-
-  // Calculate index of the first user on the current page
-  const firstIndex = lastIndex - usersPerPage;
-
-  // Get users for the current page
-  const currentUsers = filteredUsers.slice(firstIndex, lastIndex);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
 
-  const getPageNumbers = () => {
-    const middlePage = Math.ceil(maxPageButtons / 2);
-    let startPage = currentPage - middlePage + 1;
-    let endPage = currentPage + middlePage - 1;
-
-    if (startPage < 1) {
-      startPage = 1;
-      endPage = maxPageButtons;
-    }
-
-    if (endPage > totalPages) {
-      endPage = totalPages;
-      startPage = Math.max(1, endPage - maxPageButtons + 1);
-    }
-
-    return Array.from(
-      { length: endPage - startPage + 1 },
-      (_, i) => startPage + i
-    );
-  };
+  const firstIndex = (currentPage - 1) * usersPerPage;
+  const lastIndex = currentPage * usersPerPage;
+  const currentUsers = filteredUsers.slice(firstIndex, lastIndex);
 
   if (loading) {
     return (
@@ -127,7 +96,6 @@ const UserList = () => {
     );
   }
 
-  // Extract unique domains from user data
   const uniqueDomains = Array.from(new Set(users.map((user) => user.domain)));
 
   return (
@@ -135,84 +103,23 @@ const UserList = () => {
       <Typography variant="h1" align="center" gutterBottom fontSize={"64px"}>
         Heliverse
       </Typography>
-      <TextField
-        label="Search users"
-        variant="outlined"
-        fullWidth
-        value={searchTerm}
-        onChange={handleSearch}
-        style={{ marginBottom: "20px", borderRadius: "4px" }}
-        InputProps={{
-          style: { borderRadius: "4px", padding: "8px" },
-          classes: { notchedOutline: "no-outline" },
-        }}
-      />
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-arround",
-          marginBottom: "20px",
-        }}
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        marginBottom="20px"
       >
-        <div style={{ marginRight: "20px" }}>
-          <InputLabel htmlFor="domain-filter" style={{ marginBottom: "5px" }}>
-            Domain
-          </InputLabel>
-          <Select
-            value={filters.domain}
-            onChange={(e) => handleFilterChange(e, "domain")}
-            id="domain-filter"
-            style={{ minWidth: "150px" }}
-          >
-            <MenuItem value="">All Domains</MenuItem>
-            {uniqueDomains.map((domain) => (
-              <MenuItem key={domain} value={domain}>
-                {domain}
-              </MenuItem>
-            ))}
-          </Select>
-        </div>
-        <div style={{ marginRight: "20px" }}>
-          <InputLabel htmlFor="gender-filter" style={{ marginBottom: "5px" }}>
-            Gender
-          </InputLabel>
-          <Select
-            value={filters.gender}
-            onChange={(e) => handleFilterChange(e, "gender")}
-            id="gender-filter"
-            style={{ minWidth: "150px" }}
-          >
-            <MenuItem value="">All Genders</MenuItem>
-            <MenuItem value="Male">Male</MenuItem>
-            <MenuItem value="Female">Female</MenuItem>
-          </Select>
-        </div>
-        <div>
-          <InputLabel
-            htmlFor="availability-filter"
-            style={{ marginBottom: "5px" }}
-          >
-            Availability
-          </InputLabel>
-          <Select
-            value={filters.availability}
-            onChange={(e) => handleFilterChange(e, "availability")}
-            id="availability-filter"
-            style={{ minWidth: "150px" }}
-          >
-            <MenuItem value="">All Availability</MenuItem>
-            <MenuItem value="true">Available</MenuItem>
-            <MenuItem value="false">Not Available</MenuItem>
-          </Select>
-        </div>
-        {/* <div style={{ display: "flex", alignItems: "center" }}>
-          <IconButton aria-label="filter" disabled>
-            <FilterList />
-          </IconButton>
-        </div> */}
-      </div>
+        <CreateTeam users={users} onCreate={handleCreateTeam} />
+        <ManageTeams teams={teams} />
 
+        <SearchAndFilter
+          searchTerm={searchTerm}
+          onSearch={handleSearch}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          uniqueDomains={uniqueDomains}
+        />
+      </Box>
       <Grid container spacing={4} justifyContent="center">
         {currentUsers.map((user) => (
           <Grid item key={user.id} xs={12} sm={6} md={4} lg={3}>
@@ -220,26 +127,27 @@ const UserList = () => {
           </Grid>
         ))}
       </Grid>
-
       <div style={{ textAlign: "center", marginTop: "20px" }}>
-        {getPageNumbers().map((pageNumber) => (
-          <button
-            key={pageNumber}
-            onClick={() => handlePageChange(pageNumber)}
-            style={{
-              padding: "8px 16px",
-              margin: "0 4px",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-              backgroundColor:
-                currentPage === pageNumber ? "#4CAF50" : "#E0E0E0",
-              color: currentPage === pageNumber ? "#FFFFFF" : "#000000",
-            }}
-          >
-            {pageNumber}
-          </button>
-        ))}
+        {Array.from(
+          { length: Math.min(maxPageButtons, totalPages) },
+          (_, i) => (
+            <button
+              key={i + 1}
+              onClick={() => handlePageChange(i + 1)}
+              style={{
+                padding: "8px 16px",
+                margin: "0 4px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                backgroundColor: currentPage === i + 1 ? "#4CAF50" : "#E0E0E0",
+                color: currentPage === i + 1 ? "#FFFFFF" : "#000000",
+              }}
+            >
+              {i + 1}
+            </button>
+          )
+        )}
       </div>
     </div>
   );
