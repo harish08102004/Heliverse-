@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const usersRouter = require('./users');
+
 require('dotenv').config();
 
 const app = express();
@@ -21,7 +23,6 @@ connection.once('open', () => {
 });
 
 // Define routes
-const usersRouter = require('./routes/users');
 app.use('/users', usersRouter);
 
 // Start the server
